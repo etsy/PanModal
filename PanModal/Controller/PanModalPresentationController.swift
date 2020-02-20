@@ -99,6 +99,11 @@ open class PanModalPresentationController: UIPresentationController {
         return presentedViewController as? PanModalPresentable
     }
 
+    /**
+    The top layout constraint used for offsetting the top of the modal
+    */
+    private var topConstraint: NSLayoutConstraint?
+
     // MARK: - Views
 
     /**
@@ -177,6 +182,7 @@ open class PanModalPresentationController: UIPresentationController {
         guard let containerView = containerView
             else { return }
 
+        configureViewLayout()
         layoutBackgroundView(in: containerView)
         layoutPresentedView(in: containerView)
         configureScrollViewInsets()
@@ -228,7 +234,6 @@ open class PanModalPresentationController: UIPresentationController {
                 let presentable = self.presentable
                 else { return }
 
-            self.adjustPresentedViewFrame()
             if presentable.shouldRoundTopCorners {
                 self.addRoundedCorners(to: self.presentedView)
             }
@@ -294,7 +299,7 @@ public extension PanModalPresentationController {
      */
     func setNeedsLayoutUpdate() {
         configureViewLayout()
-        adjustPresentedViewFrame()
+        snap(toYPosition: shortFormYPosition)
         observe(scrollView: presentable?.panScrollable)
         configureScrollViewInsets()
     }
@@ -340,6 +345,16 @@ private extension PanModalPresentationController {
         containerView.addSubview(presentedView)
         containerView.addGestureRecognizer(panGestureRecognizer)
 
+        /**
+        Position the view offscreen for initial presentation
+        */
+        presentedView.translatesAutoresizingMaskIntoConstraints = false
+        topConstraint = presentedView.topAnchor.constraint(equalTo: containerView.topAnchor)
+        topConstraint?.isActive = true
+        presentedView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive = true
+        presentedView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
+        presentedView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor).isActive = true
+
         if presentable.showDragIndicator {
             addDragIndicatorView(to: presentedView)
         }
@@ -350,27 +365,6 @@ private extension PanModalPresentationController {
 
         setNeedsLayoutUpdate()
         adjustPanContainerBackgroundColor()
-    }
-
-    /**
-     Reduce height of presentedView so that it sits at the bottom of the screen
-     */
-    func adjustPresentedViewFrame() {
-
-        guard let frame = containerView?.frame
-            else { return }
-
-        let adjustedSize = CGSize(width: frame.size.width, height: frame.size.height - anchoredYPosition)
-        let panFrame = panContainerView.frame
-        panContainerView.frame.size = frame.size
-        
-        if ![shortFormYPosition, longFormYPosition].contains(panFrame.origin.y) {
-            // if the container is already in the correct position, no need to adjust positioning
-            // (rotations & size changes cause positioning to be out of sync)
-            adjust(toYPosition: panFrame.origin.y - panFrame.height + frame.height)
-        }
-        panContainerView.frame.origin.x = frame.origin.x
-        presentedViewController.view.frame = CGRect(origin: .zero, size: adjustedSize)
     }
 
     /**
@@ -469,6 +463,7 @@ private extension PanModalPresentationController {
     @objc func didPanOnPresentedView(_ recognizer: UIPanGestureRecognizer) {
 
         guard
+            let topConstraint = topConstraint,
             shouldRespond(to: recognizer),
             let containerView = containerView
             else {
@@ -487,7 +482,7 @@ private extension PanModalPresentationController {
             /**
              If presentedView is translated above the longForm threshold, treat as transition
              */
-            if presentedView.frame.origin.y == anchoredYPosition && extendsPanScrolling {
+            if topConstraint.constant == anchoredYPosition && extendsPanScrolling {
                 presentable?.willTransition(to: .longForm)
             }
 
@@ -563,6 +558,8 @@ private extension PanModalPresentationController {
      Communicate intentions to presentable and adjust subviews in containerView
      */
     func respond(to panGestureRecognizer: UIPanGestureRecognizer) {
+        guard let topConstraint = topConstraint else { return }
+
         presentable?.willRespond(to: panGestureRecognizer)
 
         var yDisplacement = panGestureRecognizer.translation(in: presentedView).y
@@ -571,10 +568,10 @@ private extension PanModalPresentationController {
          If the presentedView is not anchored to long form, reduce the rate of movement
          above the threshold
          */
-        if presentedView.frame.origin.y < longFormYPosition {
+        if topConstraint.constant < longFormYPosition {
             yDisplacement /= 2.0
         }
-        adjust(toYPosition: presentedView.frame.origin.y + yDisplacement)
+        adjust(toYPosition: topConstraint.constant + yDisplacement)
 
         panGestureRecognizer.setTranslation(.zero, in: presentedView)
     }
@@ -632,8 +629,11 @@ private extension PanModalPresentationController {
     }
 
     func snap(toYPosition yPos: CGFloat) {
+        containerView?.layoutIfNeeded()
+        adjust(toYPosition: yPos)
+
         PanModalAnimator.animate({ [weak self] in
-            self?.adjust(toYPosition: yPos)
+            self?.containerView?.layoutIfNeeded()
             self?.isPresentedViewAnimating = true
         }, config: presentable) { [weak self] didComplete in
             self?.isPresentedViewAnimating = !didComplete
@@ -644,14 +644,14 @@ private extension PanModalPresentationController {
      Sets the y position of the presentedView & adjusts the backgroundView.
      */
     func adjust(toYPosition yPos: CGFloat) {
-        presentedView.frame.origin.y = max(yPos, anchoredYPosition)
-        
-        guard presentedView.frame.origin.y > shortFormYPosition else {
+        topConstraint?.constant = max(yPos, anchoredYPosition)
+
+        guard let topConstraint = topConstraint, topConstraint.constant > shortFormYPosition else {
             backgroundView.dimState = .max
             return
         }
 
-        let yDisplacementFromShortForm = presentedView.frame.origin.y - shortFormYPosition
+        let yDisplacementFromShortForm = topConstraint.constant - shortFormYPosition
 
         /**
          Once presentedView is translated below shortForm, calculate yPos relative to bottom of screen
@@ -804,7 +804,7 @@ private extension PanModalPresentationController {
              until half way through the deceleration so that it appears
              as if we're transferring the scrollView drag momentum to the entire view
              */
-            presentedView.frame.origin.y = longFormYPosition - yOffset
+            topConstraint?.constant = longFormYPosition - yOffset
         } else {
             scrollViewYOffset = 0
             snap(toYPosition: longFormYPosition)

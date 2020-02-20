@@ -19,13 +19,18 @@ class PanContainerView: UIView {
     init(presentedView: UIView, frame: CGRect) {
         super.init(frame: frame)
         addSubview(presentedView)
+
+        presentedView.translatesAutoresizingMaskIntoConstraints = false
+        presentedView.topAnchor.constraint(equalTo: topAnchor).isActive = true
+        presentedView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
+        presentedView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
+        presentedView.bottomAnchor.constraint(equalTo: bottomAnchor).isActive = true
     }
 
     @available(*, unavailable)
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
 }
 
 extension UIView {

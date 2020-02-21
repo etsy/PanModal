@@ -77,10 +77,6 @@ public extension PanModalPresentable where Self: UIViewController {
         return true
     }
 
-    var allowsTapToDismiss: Bool {
-        return true
-    }
-
     var isUserInteractionEnabled: Bool {
         return true
     }
@@ -115,6 +111,10 @@ public extension PanModalPresentable where Self: UIViewController {
 
     func willTransition(to state: PanModalPresentationController.PresentationState) {
 
+    }
+
+    func shouldPanModalDismiss() -> Bool {
+        return true
     }
 
     func panModalWillDismiss() {

@@ -299,7 +299,14 @@ public extension PanModalPresentationController {
      */
     func setNeedsLayoutUpdate() {
         configureViewLayout()
-        snap(toYPosition: shortFormYPosition)
+
+        /// Conditionally animate position to coordinate with initial presentation animations
+        if topConstraint?.constant == 0 {
+            adjust(toYPosition: shortFormYPosition)
+        } else {
+            snap(toYPosition: shortFormYPosition)
+        }
+        
         observe(scrollView: presentable?.panScrollable)
         configureScrollViewInsets()
     }

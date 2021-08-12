@@ -70,7 +70,11 @@ public extension PanModalPresentable where Self: UIViewController {
             else { return false }
 
         scrollView.layoutIfNeeded()
-        return scrollView.contentSize.height > (scrollView.frame.height - bottomLayoutOffset)
+        
+        /// Allow scrolling if content cannot fit within the available space
+        let requiredVerticalSpace = scrollView.contentSize.height + additionalBottomContentInset
+        let availableVerticalSpace = scrollView.frame.height - bottomLayoutOffset
+        return requiredVerticalSpace > availableVerticalSpace
     }
 
     var allowsDragToDismiss: Bool {
@@ -91,6 +95,10 @@ public extension PanModalPresentable where Self: UIViewController {
 
     var showDragIndicator: Bool {
         return shouldRoundTopCorners
+    }
+    
+    var additionalBottomContentInset: CGFloat {
+        return 0.0
     }
 
     func shouldRespond(to panModalGestureRecognizer: UIPanGestureRecognizer) -> Bool {

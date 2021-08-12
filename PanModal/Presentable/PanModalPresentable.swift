@@ -165,6 +165,14 @@ public protocol PanModalPresentable: AnyObject {
      Default value is true.
      */
     var showDragIndicator: Bool { get }
+    
+    /**
+     A value used to increase bottom content inset. For example, to accomodate
+     a keyboard that would otherwise overlap content.
+     
+     Default value is 0.0.
+     */
+    var additionalBottomContentInset: CGFloat { get }
 
     /**
      Asks the delegate if the pan modal should respond to the pan modal gesture recognizer.

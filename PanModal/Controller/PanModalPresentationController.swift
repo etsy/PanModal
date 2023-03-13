@@ -178,6 +178,16 @@ open class PanModalPresentationController: UIPresentationController {
         configureViewLayout()
     }
 
+    override public func containerViewDidLayoutSubviews() {
+        super.containerViewDidLayoutSubviews()
+
+        guard let presentable = presentable else { return }
+
+        if presentable.shouldRoundTopCorners {
+            addRoundedCorners(to: presentedView)
+        }
+    }
+
     override public func presentationTransitionWillBegin() {
 
         guard let containerView = containerView
@@ -372,19 +382,12 @@ private extension PanModalPresentationController {
             presentedView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive = true
             presentedView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
         } else if UIDevice.current.userInterfaceIdiom == .pad {
-            presentedView.widthAnchor.constraint(lessThanOrEqualToConstant: Constants.maximumiPadWidth).isActive = true
+            presentedView.widthAnchor.constraint(equalToConstant: Constants.maximumiPadWidth).isActive = true
             presentedView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor).isActive = true
         }
 
-        setNeedsLayoutUpdate()
-        presentedView.layoutIfNeeded()
-
         if presentable.showDragIndicator {
             addDragIndicatorView(to: presentedView)
-        }
-
-        if presentable.shouldRoundTopCorners {
-            addRoundedCorners(to: presentedView)
         }
 
         setNeedsLayoutUpdate()

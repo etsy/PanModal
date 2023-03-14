@@ -40,7 +40,7 @@ open class PanModalPresentationController: UIPresentationController {
         static let indicatorYOffset = CGFloat(8.0)
         static let snapMovementSensitivity = CGFloat(0.7)
         static let dragIndicatorSize = CGSize(width: 36.0, height: 5.0)
-        static let maximumiPadWidth = CGFloat(600.0)
+        static let maximumIpadWidth = CGFloat(600.0)
     }
 
     // MARK: - Properties
@@ -382,7 +382,7 @@ private extension PanModalPresentationController {
             presentedView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive = true
             presentedView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
         } else if UIDevice.current.userInterfaceIdiom == .pad {
-            presentedView.widthAnchor.constraint(equalToConstant: Constants.maximumiPadWidth).isActive = true
+            presentedView.widthAnchor.constraint(equalToConstant: Constants.maximumIpadWidth).isActive = true
             presentedView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor).isActive = true
         }
 

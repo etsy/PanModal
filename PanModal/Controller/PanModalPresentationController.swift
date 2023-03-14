@@ -40,6 +40,7 @@ open class PanModalPresentationController: UIPresentationController {
         static let indicatorYOffset = CGFloat(8.0)
         static let snapMovementSensitivity = CGFloat(0.7)
         static let dragIndicatorSize = CGSize(width: 36.0, height: 5.0)
+        static let maximumIpadWidth = CGFloat(600.0)
     }
 
     // MARK: - Properties
@@ -175,6 +176,16 @@ open class PanModalPresentationController: UIPresentationController {
     override public func containerViewWillLayoutSubviews() {
         super.containerViewWillLayoutSubviews()
         configureViewLayout()
+    }
+
+    override public func containerViewDidLayoutSubviews() {
+        super.containerViewDidLayoutSubviews()
+
+        guard let presentable = presentable else { return }
+
+        if presentable.shouldRoundTopCorners {
+            addRoundedCorners(to: presentedView)
+        }
     }
 
     override public func presentationTransitionWillBegin() {
@@ -365,16 +376,18 @@ private extension PanModalPresentationController {
         presentedView.translatesAutoresizingMaskIntoConstraints = false
         topConstraint = presentedView.topAnchor.constraint(equalTo: containerView.topAnchor)
         topConstraint?.isActive = true
-        presentedView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive = true
-        presentedView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
         presentedView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor).isActive = true
+
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            presentedView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive = true
+            presentedView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
+        } else if UIDevice.current.userInterfaceIdiom == .pad {
+            presentedView.widthAnchor.constraint(equalToConstant: Constants.maximumIpadWidth).isActive = true
+            presentedView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor).isActive = true
+        }
 
         if presentable.showDragIndicator {
             addDragIndicatorView(to: presentedView)
-        }
-
-        if presentable.shouldRoundTopCorners {
-            addRoundedCorners(to: presentedView)
         }
 
         setNeedsLayoutUpdate()
